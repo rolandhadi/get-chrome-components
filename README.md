@@ -1,4 +1,4 @@
-# Get Chrome Component
+# Get Chrome Components
 
 🚀 A simple web-based tool for downloading **Chrome**, **ChromeDriver**, and **Chrome Headless Shell** versions for **test automation**.
 
@@ -16,13 +16,10 @@
 3. **Search & Select Version** – Filter and pick the version you need.
 4. **Download** – Click the **Download Component** button to get the file.
 
-## 📸 Screenshot
-
-![Screenshot](https://github.com/rolandhadi/chrome-component-downloader/raw/main/screenshot.png)
 
 ## 🌐 Live Demo
 
-You can access the tool **[here](https://rolandhadi.github.io/get-chrome-component/)** (if hosted via GitHub Pages).
+You can access the tool **[here](https://rolandhadi.github.io/get-chrome-components/)** (if hosted via GitHub Pages).
 
 ## 🏗 Setup
 
