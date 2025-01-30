@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Chrome Components For Test Automation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        input,
+        select,
+        button {
+            margin: 10px 0;
+            padding: 10px;
+            width: calc(100% - 22px);
+            box-sizing: border-box;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Download Chrome Components For Test Automation</h3>
+    <h4>by Roland Ross Hadi <a href="https://github.com/rolandhadi" target="_blank">github.com/rolandhadi</a></h4>
+
+    <label for="componentSelect">Select Component:</label>
+    <select id="componentSelect">
+        <option value="chrome">Chrome</option>
+        <option value="chromedriver">ChromeDriver</option>
+        <option value="chrome-headless-shell">Chrome Headless Shell</option>
+    </select>
+
+    <label for="platformSelect">Select Platform:</label>
+    <select id="platformSelect"></select>
+
+    <label for="versionSearch">Search Version:</label>
+    <input type="text" id="versionSearch" placeholder="Search version...">
+
+    <label for="versionSelect">Select Version:</label>
+    <select id="versionSelect"></select>
+
+    <button id="downloadButton" disabled>Download Component</button>
+
+    <script>
+        const versionSearch = document.getElementById('versionSearch');
+        const versionSelect = document.getElementById('versionSelect');
+        const componentSelect = document.getElementById('componentSelect');
+        const platformSelect = document.getElementById('platformSelect');
+        const downloadButton = document.getElementById('downloadButton');
+        let chromeData = [];
+
+        // Fetch the JSON data
+        fetch('https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json')
+            .then(response => response.json())
+            .then(data => {
+                chromeData = data.versions;
+                populateVersionSelect(chromeData);
+                if (chromeData.length > 0) {
+                    populatePlatformSelect(chromeData[0], componentSelect.value);
+                }
+                updateDownloadButton();
+            })
+            .catch(error => console.error('Error fetching JSON:', error));
+
+        // Populate the version dropdown
+        function populateVersionSelect(versions) {
+            versionSelect.innerHTML = ''; // Clear existing options
+            versions.forEach((version, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = version.version;
+                versionSelect.appendChild(option);
+            });
+
+            if (versions.length > 0) {
+                versionSelect.value = 0;
+                populatePlatformSelect(versions[0], componentSelect.value);
+            } else {
+                platformSelect.innerHTML = ''; // Clear platforms if no version matches
+            }
+            updateDownloadButton();
+        }
+
+        // Populate the platform dropdown based on selected version and component
+        function populatePlatformSelect(version, component) {
+            platformSelect.innerHTML = ''; // Clear previous platforms
+            if (version && version.downloads[component]) {
+                version.downloads[component].forEach(download => {
+                    const option = document.createElement('option');
+                    option.value = download.url;
+                    option.textContent = download.platform;
+                    platformSelect.appendChild(option);
+                });
+            }
+            updateDownloadButton();
+        }
+
+        // Update download button state
+        function updateDownloadButton() {
+            if (platformSelect.options.length > 0) {
+                downloadButton.disabled = false;
+            } else {
+                downloadButton.disabled = true;
+            }
+        }
+
+        // Filter versions based on search input
+        versionSearch.addEventListener('input', () => {
+            const searchValue = versionSearch.value.toLowerCase();
+            const filteredVersions = chromeData.filter(version => version.version.includes(searchValue));
+            populateVersionSelect(filteredVersions);
+        });
+
+        // Update platforms when component changes
+        componentSelect.addEventListener('change', () => {
+            const selectedVersionIndex = versionSelect.value;
+            if (selectedVersionIndex !== "") {
+                const selectedVersion = chromeData[selectedVersionIndex];
+                populatePlatformSelect(selectedVersion, componentSelect.value);
+            }
+        });
+
+        // Disable download button initially
+        updateDownloadButton();
+
+        // Download button action
+        downloadButton.addEventListener('click', () => {
+            const downloadUrl = platformSelect.value;
+            if (downloadUrl) {
+                window.open(downloadUrl, '_blank');
+            } else {
+                alert('Please select a version, component, and platform to download.');
+            }
+        });
+    </script>
+</body>
+
+</html>
