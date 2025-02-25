@@ -59,22 +59,34 @@
         const downloadButton = document.getElementById('downloadButton');
         let chromeData = [];
 
+        // Define static platform options
+        const staticPlatforms = ["linux64", "mac-arm64", "mac-x64", "win32", "win64"];
+
+        // Populate the platform dropdown with static values
+        function populateStaticPlatformSelect() {
+            platformSelect.innerHTML = '';
+            staticPlatforms.forEach(platform => {
+                const option = document.createElement('option');
+                option.value = platform;
+                option.textContent = platform;
+                platformSelect.appendChild(option);
+            });
+            updateDownloadButton();
+        }
+
         // Fetch the JSON data
         fetch('https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json')
             .then(response => response.json())
             .then(data => {
                 chromeData = data.versions;
                 populateVersionSelect(chromeData);
-                if (chromeData.length > 0) {
-                    populatePlatformSelect(chromeData[0], componentSelect.value);
-                }
-                updateDownloadButton();
+                populateStaticPlatformSelect(); // Populate static platforms
             })
             .catch(error => console.error('Error fetching JSON:', error));
 
         // Populate the version dropdown
         function populateVersionSelect(versions) {
-            versionSelect.innerHTML = ''; // Clear existing options
+            versionSelect.innerHTML = '';
             versions.forEach((version, index) => {
                 const option = document.createElement('option');
                 option.value = index;
@@ -84,34 +96,14 @@
 
             if (versions.length > 0) {
                 versionSelect.value = 0;
-                populatePlatformSelect(versions[0], componentSelect.value);
-            } else {
-                platformSelect.innerHTML = ''; // Clear platforms if no version matches
-            }
-            updateDownloadButton();
-        }
-
-        // Populate the platform dropdown based on selected version and component
-        function populatePlatformSelect(version, component) {
-            platformSelect.innerHTML = ''; // Clear previous platforms
-            if (version && version.downloads[component]) {
-                version.downloads[component].forEach(download => {
-                    const option = document.createElement('option');
-                    option.value = download.url;
-                    option.textContent = download.platform;
-                    platformSelect.appendChild(option);
-                });
+                populateStaticPlatformSelect();
             }
             updateDownloadButton();
         }
 
         // Update download button state
         function updateDownloadButton() {
-            if (platformSelect.options.length > 0) {
-                downloadButton.disabled = false;
-            } else {
-                downloadButton.disabled = true;
-            }
+            downloadButton.disabled = versionSelect.options.length === 0;
         }
 
         // Filter versions based on search input
@@ -121,23 +113,28 @@
             populateVersionSelect(filteredVersions);
         });
 
-        // Update platforms when component changes
-        componentSelect.addEventListener('change', () => {
-            const selectedVersionIndex = versionSelect.value;
-            if (selectedVersionIndex !== "") {
-                const selectedVersion = chromeData[selectedVersionIndex];
-                populatePlatformSelect(selectedVersion, componentSelect.value);
-            }
-        });
-
-        // Disable download button initially
-        updateDownloadButton();
+        // Ensure platforms remain static when the component or version changes
+        componentSelect.addEventListener('change', populateStaticPlatformSelect);
+        versionSelect.addEventListener('change', populateStaticPlatformSelect);
 
         // Download button action
         downloadButton.addEventListener('click', () => {
-            const downloadUrl = platformSelect.value;
-            if (downloadUrl) {
-                window.open(downloadUrl, '_blank');
+            const selectedVersionIndex = versionSelect.value;
+            const selectedPlatform = platformSelect.value;
+            const selectedComponent = componentSelect.value;
+
+            if (selectedVersionIndex !== "" && selectedPlatform && selectedComponent) {
+                const selectedVersion = chromeData[parseInt(selectedVersionIndex)];
+                if (selectedVersion && selectedVersion.downloads[selectedComponent]) {
+                    const downloadData = selectedVersion.downloads[selectedComponent].find(d => d.platform === selectedPlatform);
+                    if (downloadData) {
+                        window.open(downloadData.url, '_blank');
+                    } else {
+                        alert('Download not available for this platform.');
+                    }
+                } else {
+                    alert('Download not available.');
+                }
             } else {
                 alert('Please select a version, component, and platform to download.');
             }
