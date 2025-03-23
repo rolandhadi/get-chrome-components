@@ -1,145 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download Chrome Components For Test Automation</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: auto;
-            padding: 20px;
-        }
-
-        input,
-        select,
-        button {
-            margin: 10px 0;
-            padding: 10px;
-            width: calc(100% - 22px);
-            box-sizing: border-box;
-        }
-
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Download Chrome Components For Test Automation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+    }
+    input,
+    select,
+    button {
+      margin: 10px 0;
+      padding: 10px;
+      width: calc(100% - 22px);
+      box-sizing: border-box;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
-
 <body>
-    <h3>Download Chrome Components For Test Automation</h3>
-    <h4>by Roland Ross Hadi <a href="https://github.com/rolandhadi" target="_blank">github.com/rolandhadi</a></h4>
+  <h3>Download Chrome Components For Test Automation</h3>
+  <h4>
+    by Roland Ross Hadi
+    <a href="https://github.com/rolandhadi" target="_blank">github.com/rolandhadi</a>
+  </h4>
 
-    <label for="componentSelect">Select Component:</label>
-    <select id="componentSelect">
-        <option value="chrome">Chrome</option>
-        <option value="chromedriver">ChromeDriver</option>
-        <option value="chrome-headless-shell">Chrome Headless Shell</option>
-    </select>
+  <label for="componentSelect">Select Component:</label>
+  <select id="componentSelect">
+    <option value="chrome">Chrome</option>
+    <option value="chromedriver">ChromeDriver</option>
+    <option value="chrome-headless-shell">Chrome Headless Shell</option>
+  </select>
 
-    <label for="platformSelect">Select Platform:</label>
-    <select id="platformSelect"></select>
+  <label for="platformSelect">Select Platform:</label>
+  <select id="platformSelect"></select>
 
-    <label for="versionSearch">Search Version:</label>
-    <input type="text" id="versionSearch" placeholder="Search version...">
+  <label for="versionSearch">Search Version:</label>
+  <input type="text" id="versionSearch" placeholder="Search version..." />
 
-    <label for="versionSelect">Select Version:</label>
-    <select id="versionSelect"></select>
+  <label for="versionSelect">Select Version:</label>
+  <select id="versionSelect"></select>
 
-    <button id="downloadButton" disabled>Download Component</button>
+  <button id="downloadButton" disabled>Download Component</button>
 
-    <script>
-        const versionSearch = document.getElementById('versionSearch');
-        const versionSelect = document.getElementById('versionSelect');
-        const componentSelect = document.getElementById('componentSelect');
-        const platformSelect = document.getElementById('platformSelect');
-        const downloadButton = document.getElementById('downloadButton');
-        let chromeData = [];
+  <script>
+    const versionSearch = document.getElementById('versionSearch');
+    const versionSelect = document.getElementById('versionSelect');
+    const componentSelect = document.getElementById('componentSelect');
+    const platformSelect = document.getElementById('platformSelect');
+    const downloadButton = document.getElementById('downloadButton');
+    let chromeData = [];
 
-        // Define static platform options
-        const staticPlatforms = ["linux64", "mac-arm64", "mac-x64", "win32", "win64"];
+    // Static platform options
+    const staticPlatforms = ["linux64", "mac-arm64", "mac-x64", "win32", "win64"];
 
-        // Populate the platform dropdown with static values
-        function populateStaticPlatformSelect() {
-            platformSelect.innerHTML = '';
-            staticPlatforms.forEach(platform => {
-                const option = document.createElement('option');
-                option.value = platform;
-                option.textContent = platform;
-                platformSelect.appendChild(option);
-            });
-            updateDownloadButton();
+    // Populate the platform dropdown while preserving current selection
+    function populateStaticPlatformSelect() {
+      const currentSelected = platformSelect.value;
+      platformSelect.innerHTML = '';
+      staticPlatforms.forEach(platform => {
+        const option = document.createElement('option');
+        option.value = platform;
+        option.textContent = platform;
+        platformSelect.appendChild(option);
+      });
+      if (staticPlatforms.includes(currentSelected)) {
+        platformSelect.value = currentSelected;
+      }
+      updateDownloadButton();
+    }
+
+    // Populate the version dropdown while preserving current selection and reversing the order
+    function populateVersionSelect(versions) {
+      const currentSelected = versionSelect.value;
+      versionSelect.innerHTML = '';
+      // Reverse the array so the latest version appears first
+      const reversedVersions = versions.slice().reverse();
+      reversedVersions.forEach((version) => {
+        const option = document.createElement('option');
+        // Use version string as value so we can reliably retrieve it later
+        option.value = version.version;
+        option.textContent = version.version;
+        versionSelect.appendChild(option);
+      });
+      // Reapply previous selection if available
+      const found = Array.from(versionSelect.options).find(option => option.value === currentSelected);
+      if (found) {
+        versionSelect.value = found.value;
+      }
+      updateDownloadButton();
+    }
+
+    // Enable/disable the download button based on available options
+    function updateDownloadButton() {
+      downloadButton.disabled = versionSelect.options.length === 0;
+    }
+
+    // Fetch JSON data and populate dropdowns
+    fetch('https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json')
+      .then(response => response.json())
+      .then(data => {
+        chromeData = data.versions;
+        populateVersionSelect(chromeData);
+        populateStaticPlatformSelect();
+      })
+      .catch(error => console.error('Error fetching JSON:', error));
+
+    // Filter versions based on search input without resetting the component and platform fields
+    versionSearch.addEventListener('input', () => {
+      const searchValue = versionSearch.value.toLowerCase();
+      const filteredVersions = chromeData.filter(version => version.version.includes(searchValue));
+      populateVersionSelect(filteredVersions);
+    });
+
+    // Remove event listeners that reset fields – instead, only update the download button on changes
+    componentSelect.addEventListener('change', updateDownloadButton);
+    versionSelect.addEventListener('change', updateDownloadButton);
+    platformSelect.addEventListener('change', updateDownloadButton);
+
+    // Download button action using the version string to find the correct object
+    downloadButton.addEventListener('click', () => {
+      const selectedVersionStr = versionSelect.value;
+      const selectedPlatform = platformSelect.value;
+      const selectedComponent = componentSelect.value;
+
+      if (selectedVersionStr && selectedPlatform && selectedComponent) {
+        const selectedVersion = chromeData.find(v => v.version === selectedVersionStr);
+        if (selectedVersion && selectedVersion.downloads[selectedComponent]) {
+          const downloadData = selectedVersion.downloads[selectedComponent].find(d => d.platform === selectedPlatform);
+          if (downloadData) {
+            window.open(downloadData.url, '_blank');
+          } else {
+            alert('Download not available for this platform.');
+          }
+        } else {
+          alert('Download not available.');
         }
-
-        // Fetch the JSON data
-        fetch('https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json')
-            .then(response => response.json())
-            .then(data => {
-                chromeData = data.versions;
-                populateVersionSelect(chromeData);
-                populateStaticPlatformSelect(); // Populate static platforms
-            })
-            .catch(error => console.error('Error fetching JSON:', error));
-
-        // Populate the version dropdown
-        function populateVersionSelect(versions) {
-            versionSelect.innerHTML = '';
-            versions.forEach((version, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = version.version;
-                versionSelect.appendChild(option);
-            });
-
-            if (versions.length > 0) {
-                versionSelect.value = 0;
-                populateStaticPlatformSelect();
-            }
-            updateDownloadButton();
-        }
-
-        // Update download button state
-        function updateDownloadButton() {
-            downloadButton.disabled = versionSelect.options.length === 0;
-        }
-
-        // Filter versions based on search input
-        versionSearch.addEventListener('input', () => {
-            const searchValue = versionSearch.value.toLowerCase();
-            const filteredVersions = chromeData.filter(version => version.version.includes(searchValue));
-            populateVersionSelect(filteredVersions);
-        });
-
-        // Ensure platforms remain static when the component or version changes
-        componentSelect.addEventListener('change', populateStaticPlatformSelect);
-        versionSelect.addEventListener('change', populateStaticPlatformSelect);
-
-        // Download button action
-        downloadButton.addEventListener('click', () => {
-            const selectedVersionIndex = versionSelect.value;
-            const selectedPlatform = platformSelect.value;
-            const selectedComponent = componentSelect.value;
-
-            if (selectedVersionIndex !== "" && selectedPlatform && selectedComponent) {
-                const selectedVersion = chromeData[parseInt(selectedVersionIndex)];
-                if (selectedVersion && selectedVersion.downloads[selectedComponent]) {
-                    const downloadData = selectedVersion.downloads[selectedComponent].find(d => d.platform === selectedPlatform);
-                    if (downloadData) {
-                        window.open(downloadData.url, '_blank');
-                    } else {
-                        alert('Download not available for this platform.');
-                    }
-                } else {
-                    alert('Download not available.');
-                }
-            } else {
-                alert('Please select a version, component, and platform to download.');
-            }
-        });
-    </script>
+      } else {
+        alert('Please select a version, component, and platform to download.');
+      }
+    });
+  </script>
 </body>
-
 </html>
